@@ -1,5 +1,5 @@
 import { html } from 'lit-html';
-import { LitComponent } from '../src/LitComponent';
+import { LitComponent } from '../src/LitComponent.js';
 
 export class HelloWorld extends LitComponent {
   constructor() {
