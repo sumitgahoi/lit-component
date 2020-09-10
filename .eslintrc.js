@@ -8,6 +8,8 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:import/errors',
     'plugin:import/warnings',
+    'prettier',
+    'prettier/@typescript-eslint',
   ],
   rules: {
     // disable the rule for all files
@@ -15,6 +17,5 @@ module.exports = {
     '@typescript-eslint/no-non-null-assertion': 'off',
     'import/named': 'off',
     'import/no-unresolved': 'off',
-    'import/extensions': ['error', 'always', { ignorePackages: true }],
   },
 };
