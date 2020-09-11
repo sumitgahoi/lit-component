@@ -4,14 +4,19 @@ export abstract class LitComponent<P = any, S = any> extends HTMLElement {
   private readonly renderRoot: Element | DocumentFragment;
   private _props: P = {} as any;
   private _state: S = {} as any;
-  private hasRequestedUpdate = false;
+  private updateComplete: Promise<void> | null = null;
 
   constructor() {
     super();
     this.renderRoot = this.createRenderRoot();
   }
 
-  createRenderRoot() {
+  /**
+   * Return the node where the template should render.
+   * Default behavior is to create and return a shadowRoot.
+   * Override this method to return `this` to render the template as this element's childNodes.
+   */
+  protected createRenderRoot(): Element | ShadowRoot {
     return this.attachShadow({ mode: 'open' });
   }
 
@@ -33,10 +38,10 @@ export abstract class LitComponent<P = any, S = any> extends HTMLElement {
     this.requestUpdate();
   }
 
-  connectedCallback() {
+  async connectedCallback() {
     this.upgradeProps();
+    await this.requestUpdate();
     this.componentDidMount();
-    this.requestUpdate();
   }
 
   /** See https://developers.google.com/web/fundamentals/web-components/best-practices#lazy-properties */
@@ -68,13 +73,22 @@ export abstract class LitComponent<P = any, S = any> extends HTMLElement {
     render(template, this.renderRoot, { eventContext: this });
   }
 
-  protected async requestUpdate() {
-    this.hasRequestedUpdate = true;
-    queueMicrotask(() => {
-      if (this.hasRequestedUpdate) {
-        this.hasRequestedUpdate = false;
-        this.prepareTemplate().then(template => this.renderTemplate(template));
-      }
-    });
+  /**
+   * Request a UI update. Returns a promise which is resolved when the update completes.
+   * Multiple calls to this method in a single execution frame only results in one update.
+   */
+  requestUpdate(): Promise<void> {
+    if (this.updateComplete === null) {
+      this.updateComplete = Promise.resolve()
+        .then(() => (this.updateComplete = null))
+        .then(() => this.performUpdate());
+    }
+
+    return this.updateComplete;
+  }
+
+  private async performUpdate(): Promise<void> {
+    const template = await this.prepareTemplate();
+    this.renderTemplate(template);
   }
 }

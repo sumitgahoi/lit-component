@@ -133,6 +133,89 @@ describe('LitComponent', () => {
     sandbox.restore();
   });
 
+  it('requestUpdate should return the same promise', async () => {
+    const sandbox = sinon.createSandbox();
+    const el: LitComponent = await fixture(html` <hello-world></hello-world> `);
+    (sandbox.spy as any)(el, 'performUpdate');
+
+    const p1 = el.requestUpdate();
+    const p2 = el.requestUpdate();
+    const p3 = el.requestUpdate();
+    expect(p1).to.equal(p2);
+    expect(p2).to.equal(p3);
+    expect(
+      (el as any).performUpdate.callCount,
+      'LitComponent should render only in next tick'
+    ).to.equal(0);
+    await p1;
+
+    expect(
+      (el as any).performUpdate.callCount,
+      'LitComponent should batch all updates and render only once'
+    ).to.equal(1);
+    sandbox.restore();
+  });
+
+  it('requestUpdate in a different execution frame should return a different promise', async () => {
+    const sandbox = sinon.createSandbox();
+    const el: LitComponent = await fixture(html` <hello-world></hello-world> `);
+    (sandbox.spy as any)(el, 'performUpdate');
+
+    const p1 = el.requestUpdate();
+    await p1;
+    const p4 = el.requestUpdate();
+    expect(p1).to.not.equal(p4);
+    await p4;
+    expect(
+      (el as any).performUpdate.callCount,
+      'LitComponent should only batch all updates in a single execution frame'
+    ).to.equal(2);
+    sandbox.restore();
+  });
+
+  it('componentDidMount must be called from connectedCallback', async () => {
+    const sandbox = sinon.createSandbox();
+    const el: LitComponent = await fixture(html` <hello-world></hello-world> `);
+    (sandbox.spy as any)(el, 'componentDidMount');
+
+    expect(
+      (el as any).componentDidMount.callCount,
+      'componentDidMount must be not be called if connectedCallback is not called.'
+    ).to.equal(0);
+
+    await el.connectedCallback();
+
+    expect(
+      (el as any).componentDidMount.callCount,
+      'componentDidMount must be called from connectedCallback'
+    ).to.equal(1);
+
+    sandbox.restore();
+  });
+
+  it('componentDidMount must be called after first render', async () => {
+    const sandbox = sinon.createSandbox();
+    const el: LitComponent = await fixture(html` <hello-world></hello-world> `);
+    (sandbox.spy as any)(el, 'componentDidMount');
+
+    el.connectedCallback();
+    const p = el.requestUpdate();
+
+    expect(
+      (el as any).componentDidMount.callCount,
+      'componentDidMount must not be called before render is complete'
+    ).to.equal(0);
+
+    await p;
+
+    expect(
+      (el as any).componentDidMount.callCount,
+      'componentDidMount must be called after first render'
+    ).to.equal(1);
+
+    sandbox.restore();
+  });
+
   it('increases the counter on button click', async () => {
     const el: LitComponent = await fixture(
       html` <hello-world .props=${{ title: 'Hey, there!' }}></hello-world> `
