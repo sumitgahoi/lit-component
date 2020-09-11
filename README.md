@@ -1,5 +1,6 @@
 # \<lit-component>
 
+[![Build Status](https://travis-ci.org/sumitgahoi/lit-component.svg?branch=master)](https://travis-ci.org/sumitgahoi/lit-component)
 [![Code Style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 
 This webcomponent follows the [open-wc](https://github.com/open-wc/open-wc) recommendation.
